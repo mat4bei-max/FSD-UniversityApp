@@ -62,7 +62,7 @@ Functions that return a specific List are implemented for ease of use, mainly fo
 # get student
 student = repo.getStudent(student_id)
 
-# create subject with Subject class methods & validator
+# create subject with Subject class methods & generator
 subject_id = generator.generateSubjectId()
 mark = Subject.generateSubjectMark()
 grade = Subject.calculateGrade(mark)
