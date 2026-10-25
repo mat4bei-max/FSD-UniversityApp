@@ -1,6 +1,4 @@
 # University Controller - the main menu of the University System
-
-
 class UniversityController:
 
     MENU_PROMPT = "University System: (A)dmin, (S)tudent, or X : "
@@ -37,7 +35,7 @@ class UniversityController:
         # anything else just shows the menu again
 
     def openAdminSystem(self):
-        self.adminController.start()
+        self.adminController.run()
 
     def openStudentSystem(self):
-        self.studentController.start()
+        self.studentController.run()
