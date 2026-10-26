@@ -9,25 +9,27 @@ from university_app.src.system.student_repository import StudentRepository
 
 class TestRepositoryDatabaseIntegration(unittest.TestCase):
 
+    def setUp(self):
+        """Set up a temporary database, repository and studentfor testing."""
+        self.temp_dir = TemporaryDirectory()
+        self.path = Path(self.temp_dir.name) / "students.json"
+        self.database = Database(self.path)
+        self.repo = StudentRepository.createStudentRepository(self.database)
+        self.student = Student(
+            student_id="100001",
+            name="John Doe",
+            email="john.doe@university.com",
+            password="password",
+            subjects=[],
+        )
+
     def test_added_student_can_be_loaded_again(self):
         """Test that a student added to the repository can be loaded again from the database."""
         with TemporaryDirectory() as directory:
-            path = Path(directory) / "students.json"
-
-            # Initialize the database and repository
-            database = Database(path)
-            repo = StudentRepository.createStudentRepository(database)
-            student = Student(
-                student_id="100001",
-                name="John Doe",
-                email="john.doe@university.com",
-                password="password",
-                subjects=[],
-            )
 
             # add the student and then load it again through new instances
-            repo.addStudent(student)
-            new_database = Database(path)
+            self.repo.addStudent(self.student)
+            new_database = Database(self.path)
             new_repo = StudentRepository.createStudentRepository(new_database)
 
             # Test that the student was correctly loaded from the new repository instance
