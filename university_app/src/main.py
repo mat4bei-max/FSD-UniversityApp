@@ -28,7 +28,7 @@ def main():
     try:
         database = Database(DATA_PATH)
         repo = StudentRepository.createStudentRepository(database)
-    except (ValueError, KeyError, OSError) as error:
+    except (ValueError, KeyError, TypeError, AttributeError, OSError) as error:
         # ASSUMPTION: Shiva's load() does not handle a damaged file, so
         # it is caught here. REPLACE LATER if load() handles it itself.
         print(f"Could not load the students file: {error}")

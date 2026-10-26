@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from copy import deepcopy
+
 from university_app.src.system.subject import Subject
 
 class Student:
@@ -18,6 +20,9 @@ class Student:
 
         if not name == self.get_name_from_email(email):
             raise ValueError("Name does not match the name derived from the email.")
+
+        if len(subjects) > 4:
+            raise ValueError("A student cannot have more than 4 subjects.")
         
         self.student_id = student_id
         self.name = name
@@ -47,7 +52,7 @@ class Student:
 
     def getSubjects(self) -> list[Subject]:
         """Get the list of subjects for the student."""
-        return self.subjects
+        return deepcopy(self.subjects)
 
     def changePassword(self, new_password: str) -> None:
         """Change the student's password."""
