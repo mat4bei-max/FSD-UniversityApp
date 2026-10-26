@@ -45,10 +45,10 @@ class AdminController:
     def student_summary(self, student):
         average = self.average_mark(student)
         if average is None:
-            return f"{student.name} :: {student.student_id:06d} -- no subjects"
+            return f"{student.name} :: {student.student_id} -- no subjects"
         grade = Subject.calculateGrade(average)
         return (
-            f"{student.name} :: {student.student_id:06d}"
+            f"{student.name} :: {student.student_id}"
             f" --> GRADE: {grade} - MARK: {average:.2f}"
         )
 
@@ -60,7 +60,7 @@ class AdminController:
             return
         for student in students:
             print(
-                f"    {student.name} :: {student.student_id:06d}"
+                f"    {student.name} :: {student.student_id}"
                 f" --> Email: {student.email}"
             )
 
@@ -103,15 +103,15 @@ class AdminController:
         entered_id = input("    Remove by ID: ").strip()
         if not entered_id.isascii() or not entered_id.isdigit():
             raise ValueError("Student ID must be a number.")
-        student_id = int(entered_id)
-        if not 1 <= student_id <= 999999:
+
+        if not 1 <= int(entered_id) <= 999999:
             raise ValueError("Student ID must be between 000001 and 999999.")
 
         try:
-            self.repo.removeStudent(student_id)
+            self.repo.removeStudent(entered_id)
         except ValueError:
-            raise ValueError(f"Student {student_id:06d} does not exist") from None
-        print(f"    Removing Student {student_id:06d} Account")
+            raise ValueError(f"Student {entered_id} does not exist") from None
+        print(f"    Removing Student {entered_id} Account")
 
     def clear_students(self):
         print("    Clearing students database")

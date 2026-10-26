@@ -16,7 +16,7 @@ class SubjectController:
             try:
                 if choice == "e":
                     subject, count = self.enrol(student_id)
-                    print(f"        Enrolling in Subject-{subject.subject_id:03d}")
+                    print(f"        Enrolling in Subject-{subject.subject_id}")
                     print(
                         f"        You are now enrolled in "
                         f"{count} out of 4 subjects"
@@ -74,16 +74,14 @@ class SubjectController:
         if not entered_id.isascii() or not entered_id.isdigit():
             raise ValueError("Subject ID must be a number.")
 
-        subject_id = int(entered_id)
-
-        if not 1 <= subject_id <= 999:
+        if not 1 <= int(entered_id) <= 999:
             raise ValueError("Subject ID must be between 001 and 999.")
 
         student = self.repo.getStudent(student_id)
-        student.removeSubject(subject_id)
+        student.removeSubject(entered_id)
         self.repo.updateStudent(student)
 
-        print(f"        Dropping Subject-{subject_id:03d}")
+        print(f"        Dropping Subject-{entered_id}")
         print(
             f"        You are now enrolled in "
             f"{len(student.getSubjects())} out of 4 subjects"
@@ -97,7 +95,7 @@ class SubjectController:
 
         for subject in subjects:
             print(
-                f"        [ Subject::{subject.subject_id:03d}"
+                f"        [ Subject::{subject.subject_id}"
                 f" -- mark = {subject.mark}"
                 f" -- grade = {subject.grade} ]"
             )
