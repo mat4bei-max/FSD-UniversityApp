@@ -10,15 +10,22 @@ from tempfile import TemporaryDirectory
 from unittest.mock import patch
 import tkinter as tk
 
-import gui_app
-from gui_app import (AdminPage, GUIUniApp, LoginPage, RegisterPage,
-                     StudentPage, SubjectPage, UniversityPage)
 from university_app.src.database.database import Database
 from university_app.src.system.student import Student
 from university_app.src.system.student_repository import StudentRepository
 from university_app.src.system.subject import Subject
 from university_app.src.utils.id_generator import IDGenerator
 from university_app.src.utils.validator import Validator
+from university_app.src.gui import gui_app
+from university_app.src.gui.gui_app import (
+    AdminPage,
+    GUIUniApp,
+    LoginPage,
+    RegisterPage,
+    StudentPage,
+    SubjectPage,
+    UniversityPage
+    )
 
 
 class GuiTests(unittest.TestCase):
@@ -48,10 +55,10 @@ class GuiTests(unittest.TestCase):
         return StudentRepository.createStudentRepository(Database(self.path))
 
     def addJane(self, marks=()):
-        subjects = [Subject(index, mark, Subject.calculateGrade(mark))
+        subjects = [Subject(f"{index:03d}", mark, Subject.calculateGrade(mark))
                     for index, mark in enumerate(marks, 1)]
         self.repo.addStudent(Student(
-            7, "Jane Smith", "jane.smith@university.com", "Hello123", subjects
+            "000007", "Jane Smith", "jane.smith@university.com", "Hello123", subjects
         ))
 
     def pressLogin(self, email, password):
@@ -117,7 +124,7 @@ class GuiTests(unittest.TestCase):
     def testFindStudentReturnsTheMatchOrNone(self):
         self.addJane()
         page = self.app.pages[LoginPage]
-        self.assertEqual(page.findStudent("jane.smith@university.com", "Hello123").student_id, 7)
+        self.assertEqual(page.findStudent("jane.smith@university.com", "Hello123").student_id, "000007")
         self.assertIsNone(page.findStudent("jane.smith@university.com", "Wrong123"))
         self.assertIsNone(page.findStudent("john.smith@university.com", "Hello123"))
 
@@ -149,7 +156,7 @@ class GuiTests(unittest.TestCase):
 
         self.assertEqual(self.messages, [])
         self.assertEqual(self.app.currentPage, SubjectPage)
-        self.assertEqual(self.app.currentStudent.student_id, 7)
+        self.assertEqual(self.app.currentStudent.student_id, "000007")
         self.assertIn("Jane Smith", self.app.pages[SubjectPage].welcome.get())
 
     def testLoginFieldsAreClearedWhenThePageIsShownAgain(self):
@@ -225,7 +232,7 @@ class GuiTests(unittest.TestCase):
             for _ in range(5):
                 page.safe(page.onEnrolPressed)()
 
-        subjects = self.reload().getStudent(7).getSubjects()
+        subjects = self.reload().getStudent("000007").getSubjects()
         self.assertEqual(len(subjects), 4)
         self.assertEqual(len({subject.subject_id for subject in subjects}), 4)
         self.assertTrue(all(s.mark == 65 and s.grade == "C" for s in subjects))
@@ -249,15 +256,15 @@ class GuiTests(unittest.TestCase):
         self.addJane([55, 65, 75, 85])
         page = self.loginAsJane()
 
-        page.table.selection_set("1")
+        page.table.selection_set("001")
         page.safe(page.onRemovePressed)()
 
-        saved = self.reload().getStudent(7).getSubjects()
-        self.assertEqual(sorted(subject.subject_id for subject in saved), [2, 3, 4])
+        saved = self.reload().getStudent("000007").getSubjects()
+        self.assertEqual(sorted(subject.subject_id for subject in saved), ["002", "003", "004"])
         self.assertEqual(len(page.table.get_children()), 3)
 
         page.safe(page.onEnrolPressed)()
-        self.assertEqual(len(self.reload().getStudent(7).getSubjects()), 4)
+        self.assertEqual(len(self.reload().getStudent("000007").getSubjects()), 4)
         self.assertEqual(self.messages, [])
 
     def testRemoveWithoutSelectingShowsError(self):
@@ -267,7 +274,7 @@ class GuiTests(unittest.TestCase):
         page.safe(page.onRemovePressed)()
 
         self.assertEqual(self.messages, [("Error", "Select a subject in the table first")])
-        self.assertEqual(len(self.reload().getStudent(7).getSubjects()), 1)
+        self.assertEqual(len(self.reload().getStudent("000007").getSubjects()), 1)
 
     def testChangePasswordIsSaved(self):
         self.addJane()
@@ -278,7 +285,7 @@ class GuiTests(unittest.TestCase):
         page.safe(page.onChangePasswordPressed)()
 
         validator = Validator(self.reload())
-        self.assertEqual(validator.login("jane.smith@university.com", "World456").student_id, 7)
+        self.assertEqual(validator.login("jane.smith@university.com", "World456").student_id, "000007")
         with self.assertRaises(ValueError):
             validator.login("jane.smith@university.com", "Hello123")
         self.assertEqual(self.messages, [])
@@ -297,7 +304,7 @@ class GuiTests(unittest.TestCase):
 
         self.assertEqual([message for title, message in self.messages],
                          ["Password does not match - try again", gui_app.PASSWORD_HELP])
-        self.assertEqual(self.reload().getStudent(7).password, "Hello123")
+        self.assertEqual(self.reload().getStudent("000007").password, "Hello123")
 
     def testLogoutGoesBackToTheStudentPage(self):
         self.addJane()
@@ -327,9 +334,9 @@ class GuiTests(unittest.TestCase):
             ([84, 85, 85, 85], "D"), ([85, 85, 85, 85], "HD"),
         ]
         for number, (marks, grade) in enumerate(cases, 1):
-            subjects = [Subject(number * 10 + i, mark, Subject.calculateGrade(mark))
+            subjects = [Subject(f"{number * 10 + i:03d}", mark, Subject.calculateGrade(mark))
                         for i, mark in enumerate(marks)]
-            self.repo.addStudent(Student(number, f"Boundary {number}", "fixture@example.com",
+            self.repo.addStudent(Student(f"{number:06d}", f"Boundary {chr(64 + number)}", f"boundary.{chr(96 + number)}@university.com",
                                          "Hello123", subjects))
 
         page = self.app.pages[AdminPage]
@@ -337,15 +344,15 @@ class GuiTests(unittest.TestCase):
         groups = self.readGroups(self.adminText())
 
         for number, (marks, grade) in enumerate(cases, 1):
-            self.assertTrue(any(entry.startswith(f"Boundary {number} ::") for entry in groups[grade]),
+            self.assertTrue(any(entry.startswith(f"Boundary {chr(64 + number)} ::") for entry in groups[grade]),
                             f"Boundary {number} should be in {grade}")
 
     def testPassFailPartitionUsesTheUnroundedAverage(self):
         cases = [([49, 50, 50, 50], "FAIL"), ([50, 50, 50, 50], "PASS"), ([85, 85, 85, 85], "PASS")]
         for number, (marks, status) in enumerate(cases, 1):
-            subjects = [Subject(number * 10 + i, mark, Subject.calculateGrade(mark))
+            subjects = [Subject(f"{number * 10 + i:03d}", mark, Subject.calculateGrade(mark))
                         for i, mark in enumerate(marks)]
-            self.repo.addStudent(Student(number, f"Boundary {number}", "fixture@example.com",
+            self.repo.addStudent(Student(f"{number:06d}", f"Boundary {chr(64 + number)}", f"boundary.{chr(96 + number)}@university.com",
                                          "Hello123", subjects))
 
         page = self.app.pages[AdminPage]
@@ -353,7 +360,7 @@ class GuiTests(unittest.TestCase):
         groups = self.readGroups(self.adminText())
 
         for number, (marks, status) in enumerate(cases, 1):
-            self.assertTrue(any(entry.startswith(f"Boundary {number} ::") for entry in groups[status]))
+            self.assertTrue(any(entry.startswith(f"Boundary {chr(64 + number)} ::") for entry in groups[status]))
         self.assertNotIn("UNCLASSIFIED", groups)
 
     def testStudentWithNoSubjectsIsUngradedAndUnclassified(self):

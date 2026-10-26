@@ -140,9 +140,9 @@ class AdminPage(Page):
     def describe(self, student):
         average = self.averageMark(student)
         if average is None:
-            return f"{student.name} :: {student.student_id:06d} -- no subjects"
+            return f"{student.name} :: {student.student_id} -- no subjects"
         grade = Subject.calculateGrade(average)
-        return f"{student.name} :: {student.student_id:06d} --> GRADE: {grade} - MARK: {average:.2f}"
+        return f"{student.name} :: {student.student_id} --> GRADE: {grade} - MARK: {average:.2f}"
 
     def showStudents(self):
         students = self.app.repo.getStudents()
@@ -150,7 +150,7 @@ class AdminPage(Page):
         if not students:
             lines.append("    < Nothing to Display >")
         for student in students:
-            lines.append(f"    {student.name} :: {student.student_id:06d} --> Email: {student.email}")
+            lines.append(f"    {student.name} :: {student.student_id} --> Email: {student.email}")
         self.display(lines)
 
     def groupStudents(self):
@@ -197,17 +197,17 @@ class AdminPage(Page):
         entered_id = self.removeId.get().strip()
         if not entered_id.isascii() or not entered_id.isdigit():
             raise ValueError("Student ID must be a number.")
-        student_id = int(entered_id)
-        if not 1 <= student_id <= 999999:
+        if not 1 <= int(entered_id) <= 999999:
             raise ValueError("Student ID must be between 000001 and 999999.")
 
+        student_id = entered_id.zfill(6)
         try:
             self.app.repo.removeStudent(student_id)
         except ValueError:
-            raise ValueError(f"Student {student_id:06d} does not exist") from None
+            raise ValueError(f"Student {student_id} does not exist") from None
 
         self.removeId.set("")
-        self.display([f"Removing Student {student_id:06d} Account"])
+        self.display([f"Removing Student {student_id} Account"])
 
     def clearStudents(self):
         if self.app.askYesNo("Clear database", "Are you sure you want to clear the database?"):
@@ -408,7 +408,7 @@ class SubjectPage(Page):
         self.table.delete(*self.table.get_children())
         for subject in subjects:
             self.table.insert("", "end", iid=str(subject.subject_id),
-                              values=(f"{subject.subject_id:03d}", subject.mark, subject.grade))
+                              values=(f"{subject.subject_id}", subject.mark, subject.grade))
 
         self.welcome.set(f"{student.name}  -  enrolled in {len(subjects)} out of {MAX_SUBJECTS} subjects")
 
@@ -416,7 +416,7 @@ class SubjectPage(Page):
         student = self.app.currentStudent
         subject = self.enrolInNewSubject(student)
         self.showSubjectWindow(student)
-        self.status.set(f"Enrolling in Subject-{subject.subject_id:03d}")
+        self.status.set(f"Enrolling in Subject-{subject.subject_id}")
 
     def enrolInNewSubject(self, student):
         # Mathis's sequence: get, generate, add, update
@@ -438,14 +438,14 @@ class SubjectPage(Page):
         selected = self.table.selection()
         if not selected:
             raise ValueError("Select a subject in the table first")
-        subject_id = int(selected[0])
+        subject_id = selected[0]
 
         student = self.app.repo.getStudent(self.app.currentStudent.student_id)
         student.removeSubject(subject_id)
         self.app.repo.updateStudent(student)
 
         self.showSubjectWindow(student)
-        self.status.set(f"Dropping Subject-{subject_id:03d}")
+        self.status.set(f"Dropping Subject-{subject_id}")
 
     def onChangePasswordPressed(self):
         new_password = self.newPassword.get()

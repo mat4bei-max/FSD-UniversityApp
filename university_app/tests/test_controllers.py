@@ -47,10 +47,10 @@ class ControllerTests(unittest.TestCase):
         return StudentRepository.createStudentRepository(Database(self.path))
 
     def add_jane(self, marks=()):
-        subjects = [Subject(index, mark, Subject.calculateGrade(mark))
+        subjects = [Subject(f"{index:03d}", mark, Subject.calculateGrade(mark))
                     for index, mark in enumerate(marks, 1)]
         self.repo.addStudent(Student(
-            7, "Jane Smith", "jane.smith@university.com", "Hello123", subjects
+            "000007", "Jane Smith", "jane.smith@university.com", "Hello123", subjects
         ))
 
     def test_registration_is_saved_and_duplicate_is_rejected(self):
@@ -87,8 +87,8 @@ class ControllerTests(unittest.TestCase):
     def test_four_subject_limit_preserves_saved_marks_and_ids(self):
         self.add_jane()
         with patch.object(Subject, "generateSubjectMark", return_value=65):
-            output = self.run_menu(self.subject, ["e", "e", "e", "e", "e", "s", "x"], 7)
-        subjects = self.reload().getStudent(7).getSubjects()
+            output = self.run_menu(self.subject, ["e", "e", "e", "e", "e", "s", "x"], "000007")
+        subjects = self.reload().getStudent("000007").getSubjects()
         self.assertEqual(len(subjects), 4)
         self.assertEqual(len({subject.subject_id for subject in subjects}), 4)
         self.assertTrue(all(subject.mark == 65 and subject.grade == "C" for subject in subjects))
@@ -98,30 +98,30 @@ class ControllerTests(unittest.TestCase):
         self.add_jane([55, 65, 75, 85])
         output = self.run_menu(self.subject, [
             "r", "abc", "r", "999", "r", "001", "e", "s", "x"
-        ], 7)
-        saved = self.reload().getStudent(7).getSubjects()
+        ], "000007")
+        saved = self.reload().getStudent("000007").getSubjects()
         self.assertEqual(len(saved), 4)
         self.assertIn("Subject ID must be a number", output)
         self.assertIn("Subject with ID 999 not found", output)
         self.assertIn("        Dropping Subject-001", output)
-        self.assertEqual(next(subject.mark for subject in saved if subject.subject_id == 2), 65)
+        self.assertEqual(next(subject.mark for subject in saved if subject.subject_id == "002"), 65)
 
     def test_password_confirmation_change_and_reuse_persist(self):
         self.add_jane()
         output = self.run_menu(self.subject, [
             "c", "World456", "Wrong123", "World456",
             "c", "World456", "World456", "x"
-        ], 7)
+        ], "000007")
         validator = Validator(self.reload())
-        self.assertEqual(validator.login("jane.smith@university.com", "World456").student_id, 7)
+        self.assertEqual(validator.login("jane.smith@university.com", "World456").student_id, "000007")
         with self.assertRaises(ValueError):
             validator.login("jane.smith@university.com", "Hello123")
         self.assertIn("Password does not match - try again", output)
 
     def test_invalid_new_password_does_not_replace_saved_password(self):
         self.add_jane()
-        self.run_menu(self.subject, ["c", "bad", "x"], 7)
-        self.assertEqual(self.reload().getStudent(7).password, "Hello123")
+        self.run_menu(self.subject, ["c", "bad", "x"], "000007")
+        self.assertEqual(self.reload().getStudent("000007").password, "Hello123")
 
     def test_admin_grades_use_unrounded_student_averages(self):
         cases = [
@@ -135,14 +135,14 @@ class ControllerTests(unittest.TestCase):
             ([85, 85, 85, 85], "HD", "PASS"),
         ]
         for student_id, (marks, grade, status) in enumerate(cases, 1):
-            subjects = [Subject(student_id * 10 + i, mark, Subject.calculateGrade(mark))
+            subjects = [Subject(f"{student_id * 10 + i:03d}", mark, Subject.calculateGrade(mark))
                         for i, mark in enumerate(marks)]
-            self.repo.addStudent(Student(student_id, "Boundary " + str(student_id),
-                                         "fixture@example.com", "Hello123", subjects))
+            self.repo.addStudent(Student(f"{student_id:06d}", "Boundary " + chr(64 + student_id),
+                                         f"boundary.{chr(96 + student_id)}@university.com", "Hello123", subjects))
         output = self.run_menu(self.admin, ["g", "p", "x"])
         lines = output.splitlines()
         for student_id, (marks, grade, status) in enumerate(cases, 1):
-            token = "Boundary {} :: {:06d}".format(student_id, student_id)
+            token = "Boundary {} :: {:06d}".format(chr(64 + student_id), student_id)
             self.assertTrue(any(line.startswith("    " + grade + " -->") and token in line
                                 for line in lines))
             self.assertTrue(any(line.startswith("    " + status + " -->") and token in line
@@ -178,14 +178,14 @@ class ControllerTests(unittest.TestCase):
         self.add_jane()
         snapshot = self.path.read_bytes()
         with patch.object(self.repo, "updateStudent", side_effect=OSError("Cannot save")):
-            output = self.run_menu(self.subject, ["e", "x"], 7)
+            output = self.run_menu(self.subject, ["e", "x"], "000007")
         self.assertIn("Cannot save", output)
         self.assertNotIn("Enrolling in Subject", output)
         self.assertEqual(self.path.read_bytes(), snapshot)
 
     def test_unknown_menu_options_recover(self):
         self.add_jane()
-        for controller, args in [(self.student, ()), (self.admin, ()), (self.subject, (7,))]:
+        for controller, args in [(self.student, ()), (self.admin, ()), (self.subject, ("000007",))]:
             output = self.run_menu(controller, ["?", "X"], *args)
             self.assertIn("Invalid choice", output)
 
