@@ -6,11 +6,17 @@ class Subject:
     """ Subject in the university system. """
     def __init__(
             self,
-            subject_id: int,
+            subject_id: str,
             mark: int, 
             grade: str
         ):
         """ Initialize a new Subject instance. """
+
+        if not self.validateMark(mark):
+            raise ValueError(f"Invalid mark: {mark}")
+        if not self.validateGrade(grade, mark):
+            raise ValueError(f"Invalid grade: {grade} for mark: {mark}")
+        
         self.subject_id = subject_id
         self.mark = mark
         self.grade = grade
@@ -35,4 +41,15 @@ class Subject:
             grade = "HD"
 
         return grade
+
+    @staticmethod
+    def validateMark(mark: int) -> bool:
+        """ Validate if the mark is within the acceptable range. """
+        return 25 <= mark <= 100
+
+    @staticmethod
+    def validateGrade(grade: str, mark: int) -> bool:
+        """ Validate if the grade corresponds to the mark. """
+        calculated_grade = Subject.calculateGrade(mark)
+        return grade == calculated_grade
 

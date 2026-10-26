@@ -8,13 +8,17 @@ class Student:
     """
     def __init__(
             self,
-            student_id: int,
+            student_id: str,
             name: str,
             email: str,
             password: str,
             subjects: list[Subject]
         ):
         """ Initialize a new Student instance. """
+
+        if not name == self.get_name_from_email(email):
+            raise ValueError("Name does not match the name derived from the email.")
+        
         self.student_id = student_id
         self.name = name
         self.email = email
@@ -32,7 +36,7 @@ class Student:
 
         self.subjects.append(subject)
 
-    def removeSubject(self, subject_id: int) -> None:
+    def removeSubject(self, subject_id: str) -> None:
         """ Remove a subject from the student's list of subjects. """
         for subject in self.subjects:
             if subject.subject_id == subject_id:
@@ -48,4 +52,18 @@ class Student:
     def changePassword(self, new_password: str) -> None:
         """Change the student's password."""
         self.password = new_password
+
+    @staticmethod
+    def get_name_from_email(email: str) -> str:
+        """Get the student's name based on their email."""
+        names = email.split('@')[0]
+        
+        if '.' in names:
+            firstname, lastname = names.split('.', 1)
+        else:
+            firstname, lastname = names, ""
+
+        name = " ".join([firstname.capitalize(), lastname.capitalize()])
+
+        return name
 
