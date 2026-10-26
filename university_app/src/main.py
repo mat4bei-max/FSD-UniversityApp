@@ -1,0 +1,51 @@
+# main.py - starts the University System (CLI version)
+#
+# ASSUMPTION: this file sits in the project folder, right next to the
+# university_app folder, and is started with:  python main.py
+# REPLACE LATER if main.py is moved (the imports and DATA_PATH would change).
+
+from pathlib import Path
+
+# ASSUMPTION: the folder names below are copied from the imports in
+# Siddhart's test_controllers.py. UniversityController is assumed to be
+# in the same controllers folder. REPLACE LATER if any path is different.
+from university_app.src.controllers.admin_controller import AdminController
+from university_app.src.controllers.student_controller import StudentController
+from university_app.src.controllers.university_controller import UniversityController
+from university_app.src.database.database import Database
+from university_app.src.system.student_repository import StudentRepository
+from university_app.src.utils.id_generator import IDGenerator
+from university_app.src.utils.validator import Validator
+
+# ASSUMPTION: the data file is called students.data, because Siddhart's
+# controllers use that name. Shiva's 10 test students are in students.json,
+# so REPLACE LATER with "students.json" while testing, or copy that content
+# into students.data.
+# The path is built from this file's location, so it works from any folder.
+DATA_PATH = Path(__file__).resolve().parent / "university_app" / "data" / "students.data"
+
+
+def main():
+    try:
+        database = Database(DATA_PATH)
+        repo = StudentRepository.createStudentRepository(database)
+    except (ValueError, KeyError, OSError) as error:
+        # ASSUMPTION: Shiva's load() does not handle a damaged file, so
+        # it is caught here. REPLACE LATER if load() handles it itself.
+        print(f"Could not load the students file: {error}")
+        return
+
+    validator = Validator(repo)
+    generator = IDGenerator(repo)
+
+    # both controllers get the same repo, so they always see the same students
+    # (StudentController builds the SubjectController by itself)
+    admin_controller = AdminController(repo)
+    student_controller = StudentController(repo, validator, generator)
+
+    university_controller = UniversityController(admin_controller, student_controller)
+    university_controller.run()
+
+
+if __name__ == "__main__":
+    main()
