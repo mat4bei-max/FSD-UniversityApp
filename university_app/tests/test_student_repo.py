@@ -49,7 +49,16 @@ class TestStudentRepository(unittest.TestCase):
         self.assertEqual(saved.name, 'John Doe')
         self.assertEqual(saved.email, 'john.doe@university.com')
         self.assertEqual(saved.subjects, [])
-        self.database.save.assert_called_once_with([self.student])
+        self.database.save.assert_called_once()
+        saved_students = self.database.save.call_args.args[0]
+        self.assertEqual(len(saved_students), 1)
+        saved_student = saved_students[0]
+        self.assertIsNot(saved_student, self.student)
+        self.assertEqual(saved_student.student_id, self.student.student_id)
+        self.assertEqual(saved_student.name, self.student.name)
+        self.assertEqual(saved_student.email, self.student.email)
+        self.assertEqual(saved_student.password, self.student.password)
+        self.assertEqual(saved_student.subjects, [])
 
     def test_add_student_with_subject(self):
         """Test adding a student with a subject to the repository."""
@@ -63,7 +72,21 @@ class TestStudentRepository(unittest.TestCase):
         self.assertEqual(saved.subjects[0].subject_id, "200001")
         self.assertEqual(saved.subjects[0].mark, 80)
         self.assertEqual(saved.subjects[0].grade, 'D')
-        self.database.save.assert_called_once_with([self.student])
+        self.database.save.assert_called_once()
+        saved_students = self.database.save.call_args.args[0]
+        self.assertEqual(len(saved_students), 1)
+        saved_student = saved_students[0]
+        self.assertIsNot(saved_student, self.student)
+        self.assertEqual(saved_student.student_id, self.student.student_id)
+        self.assertEqual(saved_student.name, self.student.name)
+        self.assertEqual(saved_student.email, self.student.email)
+        self.assertEqual(saved_student.password, self.student.password)
+        self.assertEqual(len(saved_student.subjects), 1)
+        saved_subject = saved_student.subjects[0]
+        self.assertIsNot(saved_subject, self.student.subjects[0])
+        self.assertEqual(saved_subject.subject_id, "200001")
+        self.assertEqual(saved_subject.mark, 80)
+        self.assertEqual(saved_subject.grade, 'D')
 
     def test_get_unknown_student_raises(self):
         """Test that attempting to get an unknown student raises a ValueError."""

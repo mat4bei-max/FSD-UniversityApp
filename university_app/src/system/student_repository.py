@@ -47,15 +47,25 @@ class StudentRepository:
     # Set functions
     def addStudent(self, student: Student) -> None:
         """ Add a new student to the repository. """
-        self._students.append(student)
-        self._database.save(self._students)
+        if student.student_id in self.getAllStudentIDs():
+            raise ValueError(
+                f"Student with ID {student.student_id} already exists."
+            )
+    
+        updated_students = deepcopy(self._students)
+        updated_students.append(deepcopy(student))
+        self._database.save(updated_students)
+        self._students = updated_students
 
     def removeStudent(self, student_id: str) -> None:
         """ Remove a student from the repository. """
-        for student in self._students:
+        for index, student in enumerate(self._students):
             if student.student_id == student_id:
-                self._students.remove(student)
-                self._database.save(self._students)
+                updated_students = deepcopy(self._students)
+                del updated_students[index]
+
+                self._database.save(updated_students)
+                self._students = updated_students
                 return
 
         raise ValueError(f"Student with ID {student_id} not found.")
@@ -64,16 +74,18 @@ class StudentRepository:
         """Update an existing student and save the changes in the database."""
         for index, student in enumerate(self._students):
             if student.student_id == updated_student.student_id:
-                self._students[index] = deepcopy(updated_student)
-                self._database.save(self._students)
+                updated_students = deepcopy(self._students)
+                updated_students[index] = deepcopy(updated_student)
+                self._database.save(updated_students)
+                self._students = updated_students
                 return
 
         raise ValueError(f"Student with ID {updated_student.student_id} not found.")
 
     def clearAllStudents(self) -> None:
         """ Remove all students from the repository. """
-        self._students.clear()
-        self._database.save(self._students)
+        self._database.save([])
+        self._students = []
 
     # Utility functions
     def getAllStudentIDs(self) -> list[str]:

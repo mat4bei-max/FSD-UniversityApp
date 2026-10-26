@@ -1,0 +1,175 @@
+[
+  {
+    "student_id": "100001",
+    "name": "Alex Lee",
+    "email": "alex.lee@university.com",
+    "password": "Abcde123",
+    "subjects": [
+      {
+        "subject_id": "101",
+        "mark": 80,
+        "grade": "D"
+      },
+      {
+        "subject_id": "214",
+        "mark": 91,
+        "grade": "HD"
+      }
+    ]
+  },
+  {
+    "student_id": "100002",
+    "name": "Mia Chen",
+    "email": "mia.chen@university.com",
+    "password": "Miaaa123",
+    "subjects": [
+      {
+        "subject_id": "305",
+        "mark": 47,
+        "grade": "Z"
+      }
+    ]
+  },
+  {
+    "student_id": "100003",
+    "name": "Noah Singh",
+    "email": "noah.singh@university.com",
+    "password": "Noahh123",
+    "subjects": []
+  },
+  {
+    "student_id": "100004",
+    "name": "Eva Brown",
+    "email": "eva.brown@university.com",
+    "password": "Evaaa123",
+    "subjects": [
+      {
+        "subject_id": "412",
+        "mark": 62,
+        "grade": "P"
+      },
+      {
+        "subject_id": "118",
+        "mark": 70,
+        "grade": "C"
+      },
+      {
+        "subject_id": "256",
+        "mark": 88,
+        "grade": "HD"
+      },
+      {
+        "subject_id": "390",
+        "mark": 55,
+        "grade": "P"
+      }
+    ]
+  },
+  {
+    "student_id": "100005",
+    "name": "Liam Davis",
+    "email": "liam.davis@university.com",
+    "password": "Liamm123",
+    "subjects": [
+      {
+        "subject_id": "501",
+        "mark": 30,
+        "grade": "Z"
+      },
+      {
+        "subject_id": "502",
+        "mark": 40,
+        "grade": "Z"
+      },
+      {
+        "subject_id": "503",
+        "mark": 45,
+        "grade": "Z"
+      },
+      {
+        "subject_id": "504",
+        "mark": 28,
+        "grade": "Z"
+      }
+    ]
+  },
+  {
+    "student_id": "100006",
+    "name": "Zoe Martin",
+    "email": "zoe.martin@university.com",
+    "password": "Zoeee123",
+    "subjects": [
+      {
+        "subject_id": "610",
+        "mark": 76,
+        "grade": "D"
+      }
+    ]
+  },
+  {
+    "student_id": "100007",
+    "name": "Owen Clark",
+    "email": "owen.clark@university.com",
+    "password": "Owenn123",
+    "subjects": [
+      {
+        "subject_id": "220",
+        "mark": 95,
+        "grade": "HD"
+      },
+      {
+        "subject_id": "221",
+        "mark": 66,
+        "grade": "C"
+      }
+    ]
+  },
+  {
+    "student_id": "100008",
+    "name": "Ruby Wilson",
+    "email": "ruby.wilson@university.com",
+    "password": "Rubyy123",
+    "subjects": []
+  },
+  {
+    "student_id": "100009",
+    "name": "Jack Taylor",
+    "email": "jack.taylor@university.com",
+    "password": "Jackk123",
+    "subjects": [
+      {
+        "subject_id": "333",
+        "mark": 50,
+        "grade": "P"
+      },
+      {
+        "subject_id": "334",
+        "mark": 49,
+        "grade": "Z"
+      }
+    ]
+  },
+  {
+    "student_id": "100010",
+    "name": "Hannah White",
+    "email": "hannah.white@university.com",
+    "password": "Hanna123",
+    "subjects": [
+      {
+        "subject_id": "777",
+        "mark": 85,
+        "grade": "HD"
+      },
+      {
+        "subject_id": "778",
+        "mark": 73,
+        "grade": "C"
+      },
+      {
+        "subject_id": "779",
+        "mark": 64,
+        "grade": "P"
+      }
+    ]
+  }
+]
