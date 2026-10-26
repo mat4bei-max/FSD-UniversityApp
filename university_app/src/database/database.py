@@ -36,7 +36,7 @@ class Database:
         for row in rows:
             subjects = [
                 Subject(
-                    subject_id=int(subject["subject_id"]),
+                    subject_id=str(subject["subject_id"]),
                     mark=int(subject["mark"]),
                     grade=str(subject["grade"]),
                 )
@@ -44,7 +44,7 @@ class Database:
             ]
             students.append(
                 Student(
-                    student_id=int(row["student_id"]),
+                    student_id=str(row["student_id"]),
                     name=str(row["name"]),
                     email=str(row["email"]),
                     password=str(row["password"]),

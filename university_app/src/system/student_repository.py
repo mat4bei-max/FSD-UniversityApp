@@ -32,7 +32,7 @@ class StudentRepository:
         return cls(database=database, students=students)
 
     # Get functions
-    def getStudent(self, student_id: int) -> Student:
+    def getStudent(self, student_id: str) -> Student:
         """Return a student by ID."""
         for student in self._students:
             if student.student_id == student_id:
@@ -50,7 +50,7 @@ class StudentRepository:
         self._students.append(student)
         self._database.save(self._students)
 
-    def removeStudent(self, student_id: int) -> None:
+    def removeStudent(self, student_id: str) -> None:
         """ Remove a student from the repository. """
         for student in self._students:
             if student.student_id == student_id:
@@ -76,7 +76,7 @@ class StudentRepository:
         self._database.save(self._students)
 
     # Utility functions
-    def getAllStudentIDs(self) -> list[int]:
+    def getAllStudentIDs(self) -> list[str]:
         """
         Returns a list of all student IDs in the repository.
         Intended to be used by Generator for creating unique student IDs.
@@ -87,7 +87,7 @@ class StudentRepository:
 
         return student_ids
 
-    def getAllSubjectIDs(self) -> list[int]:
+    def getAllSubjectIDs(self) -> list[str]:
         """
         Returns a list of all subject IDs in the repository.
         Intended to be used by Generator for creating unique subject IDs.
