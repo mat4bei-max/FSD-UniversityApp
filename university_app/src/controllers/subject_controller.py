@@ -3,11 +3,13 @@ from university_app.src.system.subject import Subject
 
 class SubjectController:
     def __init__(self, repo, validator, generator):
+        """Initialize the instance and its dependencies."""
         self.repo = repo
         self.validator = validator
         self.generator = generator
 
     def run(self, student_id):
+        """Run the menu until the user chooses to exit."""
         while True:
             choice = input(
                 "        Student Course Menu (c/e/r/s/x): "
@@ -42,6 +44,7 @@ class SubjectController:
 
     def enrol(self, student_id):
         # Fetch a copy of the student's current record.
+        """Create and persist a subject enrolment and return its details."""
         student = self.repo.getStudent(student_id)
 
         # Create a subject using the team's shared classes.
@@ -69,6 +72,7 @@ class SubjectController:
         return subject, len(student.getSubjects())
 
     def remove_subject(self, student_id):
+        """Read a subject ID and persist its removal from the student."""
         entered_id = input("        Remove Subject by ID: ").strip()
 
         if not entered_id.isascii() or not entered_id.isdigit():
@@ -88,6 +92,7 @@ class SubjectController:
         )
 
     def show_subjects(self, student_id):
+        """Display the student subjects with their marks and grades."""
         student = self.repo.getStudent(student_id)
         subjects = student.getSubjects()
 
@@ -101,6 +106,7 @@ class SubjectController:
             )
 
     def change_password(self, student_id):
+        """Validate and confirm a new password before saving it."""
         print("        Updating Password")
 
         new_password = input("        New Password: ")

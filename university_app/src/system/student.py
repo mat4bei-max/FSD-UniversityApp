@@ -18,14 +18,14 @@ class Student:
         ):
         """ Initialize a new Student instance. """
 
-        if not name == self.get_name_from_email(email):
+        expected_name = self.get_name_from_email(email)
+        if name.strip().casefold() != expected_name.casefold():
             raise ValueError("Name does not match the name derived from the email.")
-
         if len(subjects) > 4:
             raise ValueError("A student cannot have more than 4 subjects.")
         
         self.student_id = student_id
-        self.name = name
+        self.name = expected_name
         self.email = email
         self.password = password
         self.subjects = subjects

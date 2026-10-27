@@ -7,10 +7,12 @@ from university_app.src.system.subject import Subject
 
 class AdminController:
     def __init__(self, repo):
+        """Initialize the instance and its dependencies."""
         self.repo = repo
 
     def run(self):
         # Admins enter directly: no login is required.
+        """Run the menu until the user chooses to exit."""
         while True:
             choice = input(
                 "    Admin System (c/g/p/r/s/x): "
@@ -35,6 +37,7 @@ class AdminController:
                 print(f"    {error}")
 
     def average_mark(self, student):
+        """Return the average subject mark, or None when no subjects exist."""
         subjects = student.getSubjects()
         if not subjects:
             return None
@@ -43,6 +46,7 @@ class AdminController:
         return sum(subject.mark for subject in subjects) / len(subjects)
 
     def student_summary(self, student):
+        """Format the student ID, average mark, and grade for display."""
         average = self.average_mark(student)
         if average is None:
             return f"{student.name} :: {student.student_id} -- no subjects"
@@ -53,6 +57,7 @@ class AdminController:
         )
 
     def show_students(self):
+        """Display all students currently stored in the repository."""
         students = self.repo.getStudents()
         print("    Student List")
         if not students:
@@ -65,6 +70,7 @@ class AdminController:
             )
 
     def group_students(self):
+        """Display students grouped by their average grade."""
         students = self.repo.getStudents()
         print("    Grade Grouping")
         if not students:
@@ -82,6 +88,7 @@ class AdminController:
                 print(f"    {grade} --> [{', '.join(entries)}]")
 
     def partition_students(self):
+        """Display students grouped by pass, fail, or unclassified status."""
         print("    PASS/FAIL Partition")
         groups = {"FAIL": [], "PASS": [], "UNCLASSIFIED": []}
 
@@ -100,6 +107,7 @@ class AdminController:
                 print(f"    {status} --> [{', '.join(entries)}]")
 
     def remove_student(self):
+        """Validate an entered student ID and remove the matching account."""
         entered_id = input("    Remove by ID: ").strip()
         if not entered_id.isascii() or not entered_id.isdigit():
             raise ValueError("Student ID must be a number.")
@@ -114,6 +122,7 @@ class AdminController:
         print(f"    Removing Student {entered_id} Account")
 
     def clear_students(self):
+        """Clear all student accounts after confirmation."""
         print("    Clearing students database")
         answer = input(
             "    Are you sure you want to clear the database (Y)ES/(N)O: "

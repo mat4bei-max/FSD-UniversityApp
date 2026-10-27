@@ -9,11 +9,13 @@ class UniversityController:
     OPTION_EXIT = "X"
 
     def __init__(self, adminController, studentController):
+        """Initialize the instance and its dependencies."""
         self.adminController = adminController
         self.studentController = studentController
         self.running = False
 
     def run(self):
+        """Run the menu until the user chooses to exit."""
         self.running = True
         while self.running:
             choice = self.readChoice()
@@ -21,9 +23,11 @@ class UniversityController:
         print(self.EXIT_MESSAGE)
 
     def readChoice(self):
+        """Read the user choice from the university menu."""
         return input(self.MENU_PROMPT)
 
     def handleChoice(self, choice):
+        """Normalize the menu choice and dispatch the selected action."""
         choice = choice.strip().upper()
 
         if choice == self.OPTION_ADMIN:
@@ -35,7 +39,9 @@ class UniversityController:
         # anything else just shows the menu again
 
     def openAdminSystem(self):
+        """Run the admin controller menu."""
         self.adminController.run()
 
     def openStudentSystem(self):
+        """Run the student controller menu."""
         self.studentController.run()

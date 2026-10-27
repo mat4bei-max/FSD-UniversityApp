@@ -10,11 +10,13 @@ from university_app.src.controllers.subject_controller import SubjectController
 
 class StudentController:
     def __init__(self, repo, validator, generator):
+        """Initialize the instance and its dependencies."""
         self.repo = repo
         self.validator = validator
         self.generator = generator
 
     def run(self):
+        """Run the menu until the user chooses to exit."""
         while True:
             choice = input(
                 "    Student System (l/r/x): "
@@ -37,6 +39,7 @@ class StudentController:
                 print(f"    {error}")
 
     def read_credentials(self):
+        """Read and validate credentials, retrying invalid input."""
         while True:
             email = input("    Email: ").strip()
             password = input("    Password: ")
@@ -50,6 +53,7 @@ class StudentController:
             return email, password
 
     def register(self):
+        """Read registration details and save a new student account."""
         print("    Student Sign Up")
 
         email, password = self.read_credentials()
@@ -80,9 +84,10 @@ class StudentController:
 
         self.repo.addStudent(student)
 
-        print(f"    Enrolling Student {name}")
+        print(f"    Enrolling Student {student.name}")
 
     def login(self):
+        """Authenticate a student and open the subject menu."""
         print("    Student Sign In")
 
         email, password = self.read_credentials()

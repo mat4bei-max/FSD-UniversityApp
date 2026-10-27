@@ -20,6 +20,7 @@ from university_app.src.utils.validator import Validator
 
 class ControllerTests(unittest.TestCase):
     def setUp(self):
+        """Create fresh dependencies and test data for each test."""
         self.temp = TemporaryDirectory(prefix="uniapp-test-")
         self.addCleanup(self.temp.cleanup)
         self.path = Path(self.temp.name) / "students.data"
@@ -32,10 +33,12 @@ class ControllerTests(unittest.TestCase):
         self.prompts = []
 
     def run_menu(self, controller, answers, *args):
+        """Run a controller with simulated input and capture its output."""
         answers = iter(answers)
         output = StringIO()
 
         def read(prompt):
+            """Record the input prompt and return the next simulated answer."""
             self.prompts.append(prompt)
             return next(answers)
 
@@ -44,9 +47,11 @@ class ControllerTests(unittest.TestCase):
         return output.getvalue()
 
     def reload(self):
+        """Load a new repository from the temporary database file."""
         return StudentRepository.createStudentRepository(Database(self.path))
 
     def add_jane(self, marks=()):
+        """Save a sample student with subjects for the supplied marks."""
         subjects = [Subject(f"{index:03d}", mark, Subject.calculateGrade(mark))
                     for index, mark in enumerate(marks, 1)]
         self.repo.addStudent(Student(
@@ -54,6 +59,7 @@ class ControllerTests(unittest.TestCase):
         ))
 
     def test_registration_is_saved_and_duplicate_is_rejected(self):
+        """Verify registration is saved and duplicate is rejected."""
         output = self.run_menu(self.student, [
             "r", "jane.smith@university.com", "Hello123", "Jane Smith",
             "r", "jane.smith@university.com", "Hello123", "x"
@@ -66,6 +72,7 @@ class ControllerTests(unittest.TestCase):
         self.assertEqual(self.prompts[0], "    Student System (l/r/x): ")
 
     def test_invalid_formats_retry_credentials_before_registration(self):
+        """Verify invalid formats retry credentials before registration."""
         output = self.run_menu(self.student, [
             "r", "invalid", "Hello123",
             "jane.smith@university.com", "hello123",
@@ -75,6 +82,7 @@ class ControllerTests(unittest.TestCase):
         self.assertEqual(len(self.reload().getStudents()), 1)
 
     def test_bad_login_recovers_and_good_login_opens_subject_menu(self):
+        """Verify bad login recovers and good login opens subject menu."""
         self.add_jane()
         output = self.run_menu(self.student, [
             "l", "jane.smith@university.com", "Wrong123",
@@ -85,6 +93,7 @@ class ControllerTests(unittest.TestCase):
         self.assertIn("        Student Course Menu (c/e/r/s/x): ", self.prompts)
 
     def test_four_subject_limit_preserves_saved_marks_and_ids(self):
+        """Verify four subject limit preserves saved marks and ids."""
         self.add_jane()
         with patch.object(Subject, "generateSubjectMark", return_value=65):
             output = self.run_menu(self.subject, ["e", "e", "e", "e", "e", "s", "x"], "000007")
@@ -95,6 +104,7 @@ class ControllerTests(unittest.TestCase):
         self.assertIn("Students are allowed to enrol in 4 subjects only", output)
 
     def test_subject_removal_handles_bad_ids_and_frees_a_place(self):
+        """Verify subject removal handles bad ids and frees a place."""
         self.add_jane([55, 65, 75, 85])
         output = self.run_menu(self.subject, [
             "r", "abc", "r", "999", "r", "001", "e", "s", "x"
@@ -107,6 +117,7 @@ class ControllerTests(unittest.TestCase):
         self.assertEqual(next(subject.mark for subject in saved if subject.subject_id == "002"), 65)
 
     def test_password_confirmation_change_and_reuse_persist(self):
+        """Verify password confirmation change and reuse persist."""
         self.add_jane()
         output = self.run_menu(self.subject, [
             "c", "World456", "Wrong123", "World456",
@@ -119,11 +130,13 @@ class ControllerTests(unittest.TestCase):
         self.assertIn("Password does not match - try again", output)
 
     def test_invalid_new_password_does_not_replace_saved_password(self):
+        """Verify invalid new password does not replace saved password."""
         self.add_jane()
         self.run_menu(self.subject, ["c", "bad", "x"], "000007")
         self.assertEqual(self.reload().getStudent("000007").password, "Hello123")
 
     def test_admin_grades_use_unrounded_student_averages(self):
+        """Verify admin grades use unrounded student averages."""
         cases = [
             ([49, 50, 50, 50], "Z", "FAIL"),
             ([50, 50, 50, 50], "P", "PASS"),
@@ -149,6 +162,7 @@ class ControllerTests(unittest.TestCase):
                                 for line in lines))
 
     def test_empty_database_and_zero_subjects_have_defined_output(self):
+        """Verify empty database and zero subjects have defined output."""
         output = self.run_menu(self.admin, ["s", "g", "p", "x"])
         self.assertIn("< Nothing to Display >", output)
         self.assertIn("PASS --> []", output)
@@ -158,6 +172,7 @@ class ControllerTests(unittest.TestCase):
         self.assertIn("UNCLASSIFIED --> [Jane Smith", output)
 
     def test_admin_removal_validates_ids_and_persists_deletion(self):
+        """Verify admin removal validates ids and persists deletion."""
         self.add_jane()
         output = self.run_menu(self.admin, ["r", "abc", "r", "000008", "r", "000007", "x"])
         self.assertIn("Student ID must be a number", output)
@@ -166,6 +181,7 @@ class ControllerTests(unittest.TestCase):
         self.assertEqual(self.prompts[0], "    Admin System (c/g/p/r/s/x): ")
 
     def test_clear_requires_confirmation_and_preserves_file_on_cancel(self):
+        """Verify clear requires confirmation and preserves file on cancel."""
         self.add_jane()
         snapshot = self.path.read_bytes()
         self.run_menu(self.admin, ["c", "n", "c", "maybe", "x"])
@@ -175,6 +191,7 @@ class ControllerTests(unittest.TestCase):
         self.assertEqual(self.reload().getStudents(), [])
 
     def test_write_error_does_not_print_enrolment_success(self):
+        """Verify write error does not print enrolment success."""
         self.add_jane()
         snapshot = self.path.read_bytes()
         with patch.object(self.repo, "updateStudent", side_effect=OSError("Cannot save")):
@@ -184,6 +201,7 @@ class ControllerTests(unittest.TestCase):
         self.assertEqual(self.path.read_bytes(), snapshot)
 
     def test_unknown_menu_options_recover(self):
+        """Verify unknown menu options recover."""
         self.add_jane()
         for controller, args in [(self.student, ()), (self.admin, ()), (self.subject, ("000007",))]:
             output = self.run_menu(controller, ["?", "X"], *args)

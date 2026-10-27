@@ -25,6 +25,7 @@ from university_app.src.utils.validator import Validator
 DATA_PATH = Path(__file__).resolve().parents[1] / "data" / "students.data"
 
 def main():
+    """Initialize shared services and run the command-line application."""
     try:
         database = Database(DATA_PATH)
         repo = StudentRepository.createStudentRepository(database)
