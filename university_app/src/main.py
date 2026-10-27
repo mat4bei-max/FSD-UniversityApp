@@ -1,8 +1,4 @@
 # main.py - starts the University System (CLI version)
-#
-# ASSUMPTION: this file sits in the project folder, right next to the
-# university_app folder, and is started with:  python main.py
-# REPLACE LATER if main.py is moved (the imports and DATA_PATH would change).
 
 from pathlib import Path
 
