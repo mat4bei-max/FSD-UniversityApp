@@ -15,11 +15,17 @@ class UniversityController:
         self.running = False
 
     def run(self):
-        """Run the menu until the user chooses to exit."""
+        """Run the menu until the user exits or input is interrupted."""
         self.running = True
-        while self.running:
-            choice = self.readChoice()
-            self.handleChoice(choice)
+        try:
+            while self.running:
+                choice = self.readChoice()
+                self.handleChoice(choice)
+        except (EOFError, KeyboardInterrupt):
+            # Ctrl+D / end of input, or Ctrl+C: treat it like choosing X
+            print() 
+        finally:
+            self.running = False
         print(self.EXIT_MESSAGE)
 
     def readChoice(self):
