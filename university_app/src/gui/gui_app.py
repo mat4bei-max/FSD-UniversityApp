@@ -16,11 +16,11 @@
 # REPLACE LATER if the file is moved (the imports below would change).
 
 import tkinter as tk
+from pathlib import Path
 from tkinter import messagebox, ttk
 
 # ASSUMPTION: the GUI uses the same data file as the CLI, taken from main.py
 # so both always match. REPLACE LATER if the team keeps the path somewhere else.
-from main import DATA_PATH
 from university_app.src.database.database import Database
 from university_app.src.system.student import Student
 from university_app.src.system.student_repository import StudentRepository
@@ -37,35 +37,65 @@ PASSWORD_HELP = (
     "Password must start with a capital letter, have at least five letters "
     "and then three or more digits (for example Abcde123)"
 )
-
+DATA_PATH = Path(__file__).resolve().parents[2] / "data" / "students.data"
 
 class Page(ttk.Frame):
     """One screen of the app. Every page reaches the shared objects through self.app."""
 
     def __init__(self, parent, app):
+        """Initialize the instance and its dependencies."""
         super().__init__(parent, padding=20)
         self.app = app
+        self.lastEntry = None
         self.buildPage()
 
     def buildPage(self):
+        """Build the widgets and layout for this page."""
         raise NotImplementedError
 
     def onShow(self):
         # called every time the page is shown, pages change this when they need a refresh
+        """Prepare or refresh the page when it becomes visible."""
         pass
 
+    def trackEntry(self, entry):
+        """Remember the entry that last had the cursor (first entry is the default)."""
+        if self.lastEntry is None:
+            self.lastEntry = entry          # default, so it works even if nothing was clicked yet
+        entry.bind("<FocusIn>", lambda event: setattr(self, "lastEntry", entry), add="+")
+        return entry
+
+    def restoreFocus(self):
+        """Put the cursor back in the entry the user was using."""
+        if self.lastEntry is None:
+            return
+        self.winfo_toplevel().lift()
+        self.winfo_toplevel().focus_force()   # re-activate the main window first
+        self.lastEntry.focus_force()
+        self.lastEntry.icursor("end")
+
     def addTitle(self, text):
+        """Add a heading label to the page."""
         ttk.Label(self, text=text, font=("Helvetica", 20, "bold")).pack(pady=(0, 15))
+
+    # def addField(self, form, row, label, variable, hidden=False):
+    #     """Add a labeled input field and return its entry widget."""
+    #     ttk.Label(form, text=label).grid(row=row, column=0, sticky="e", padx=5, pady=5)
+    #     entry = ttk.Entry(form, textvariable=variable, width=32, show="*" if hidden else "")
+    #     entry.grid(row=row, column=1, pady=5)
+    #     return entry
 
     def addField(self, form, row, label, variable, hidden=False):
         ttk.Label(form, text=label).grid(row=row, column=0, sticky="e", padx=5, pady=5)
         entry = ttk.Entry(form, textvariable=variable, width=32, show="*" if hidden else "")
         entry.grid(row=row, column=1, pady=5)
-        return entry
+        return self.trackEntry(entry)
 
     def safe(self, action):
         # same idea as the CLI controllers: ValueError / OSError become an error message
+        """Wrap an action so expected errors appear in a message window."""
         def runAction():
+            """Run the wrapped action and display expected errors."""
             try:
                 action()
             except (ValueError, OSError) as error:
@@ -77,6 +107,7 @@ class UniversityPage(Page):
     """Main page, like UniversityController: Admin, Student or Exit."""
 
     def buildPage(self):
+        """Build the widgets and layout for this page."""
         self.addTitle("University System")
         ttk.Label(self, text="Who is using the system?").pack(pady=(0, 15))
         ttk.Button(self, text="Admin (no login)", width=25,
@@ -91,6 +122,7 @@ class AdminPage(Page):
     """Like AdminController: show, group, partition, remove and clear students."""
 
     def buildPage(self):
+        """Build the widgets and layout for this page."""
         self.addTitle("Admin System")
 
         ttk.Button(self, text="Back",
@@ -120,10 +152,12 @@ class AdminPage(Page):
         self.output.pack(side="left", fill="both", expand=True)
 
     def onShow(self):
+        """Prepare or refresh the page when it becomes visible."""
         self.removeId.set("")
         self.display(["Choose an action above."])
 
     def display(self, lines):
+        """Replace the admin output with the supplied lines."""
         self.output.configure(state="normal")
         self.output.delete("1.0", "end")
         self.output.insert("end", "\n".join(lines))
@@ -132,12 +166,14 @@ class AdminPage(Page):
     # Same rule as AdminController.average_mark (average of the subjects the student
     # has now). REPLACE LATER if the team moves this rule into Student.
     def averageMark(self, student):
+        """Return the average subject mark, or None when no subjects exist."""
         subjects = student.getSubjects()
         if not subjects:
             return None
         return sum(subject.mark for subject in subjects) / len(subjects)
 
     def describe(self, student):
+        """Format a student summary with the average mark and grade."""
         average = self.averageMark(student)
         if average is None:
             return f"{student.name} :: {student.student_id} -- no subjects"
@@ -145,6 +181,7 @@ class AdminPage(Page):
         return f"{student.name} :: {student.student_id} --> GRADE: {grade} - MARK: {average:.2f}"
 
     def showStudents(self):
+        """Display the current student list in the admin page."""
         students = self.app.repo.getStudents()
         lines = ["Student List"]
         if not students:
@@ -154,6 +191,7 @@ class AdminPage(Page):
         self.display(lines)
 
     def groupStudents(self):
+        """Display students grouped by their average grade."""
         students = self.app.repo.getStudents()
         lines = ["Grade Grouping"]
         if not students:
@@ -174,6 +212,7 @@ class AdminPage(Page):
         self.display(lines)
 
     def partitionStudents(self):
+        """Display students grouped by pass, fail, or unclassified status."""
         lines = ["PASS/FAIL Partition"]
         groups = {"FAIL": [], "PASS": [], "UNCLASSIFIED": []}
 
@@ -194,6 +233,7 @@ class AdminPage(Page):
         self.display(lines)
 
     def removeStudent(self):
+        """Validate the entered ID and delete the matching student account."""
         entered_id = self.removeId.get().strip()
         if not entered_id.isascii() or not entered_id.isdigit():
             raise ValueError("Student ID must be a number.")
@@ -210,6 +250,7 @@ class AdminPage(Page):
         self.display([f"Removing Student {student_id} Account"])
 
     def clearStudents(self):
+        """Clear student accounts after the user confirms the action."""
         if self.app.askYesNo("Clear database", "Are you sure you want to clear the database?"):
             self.app.repo.clearAllStudents()
             self.display(["Students data cleared"])
@@ -219,6 +260,7 @@ class StudentPage(Page):
     """Like StudentController: choose between login and register."""
 
     def buildPage(self):
+        """Build the widgets and layout for this page."""
         self.addTitle("Student System")
         ttk.Button(self, text="Login", width=25,
                    command=self.app.showLoginWindow).pack(pady=5)
@@ -232,6 +274,7 @@ class LoginPage(Page):
     """The login window: email, password and a login button."""
 
     def buildPage(self):
+        """Build the widgets and layout for this page."""
         self.addTitle("Student Login")
 
         self.email = tk.StringVar()
@@ -250,10 +293,12 @@ class LoginPage(Page):
                    command=lambda: self.app.showPage(StudentPage)).pack(side="left", padx=5)
 
     def onShow(self):
+        """Prepare or refresh the page when it becomes visible."""
         self.email.set("")
         self.password.set("")
 
     def onLoginPressed(self):
+        """Validate login details and open the authenticated student page."""
         email = self.email.get().strip()
         password = self.password.get()
 
@@ -273,10 +318,12 @@ class LoginPage(Page):
         self.app.openSubjectWindow(student)
 
     def isAnyFieldEmpty(self, email, password):
+        """Return whether any supplied credential field is empty."""
         return not email.strip() or not password.strip()
 
     def isEmailFormatValid(self, email):
         # the Validator raises ValueError, this turns it into True / False
+        """Return whether the email matches the required format."""
         try:
             self.app.validator.validateEmail(email)
         except ValueError:
@@ -286,6 +333,7 @@ class LoginPage(Page):
     def findStudent(self, email, password):
         # Shiva's Validator.login loops over the repository students and raises
         # ValueError if nothing matches. This returns the student or None.
+        """Return the student matching the credentials, or None."""
         try:
             return self.app.validator.login(email, password)
         except ValueError:
@@ -296,6 +344,7 @@ class RegisterPage(Page):
     """The register part of StudentController: email, password and name."""
 
     def buildPage(self):
+        """Build the widgets and layout for this page."""
         self.addTitle("Student Sign Up")
 
         self.email = tk.StringVar()
@@ -317,11 +366,13 @@ class RegisterPage(Page):
                    command=lambda: self.app.showPage(StudentPage)).pack(side="left", padx=5)
 
     def onShow(self):
+        """Prepare or refresh the page when it becomes visible."""
         self.email.set("")
         self.password.set("")
         self.name.set("")
 
     def onRegisterPressed(self):
+        """Validate registration fields and save a new student account."""
         email = self.email.get().strip()
         password = self.password.get()
         name = self.name.get().strip()
@@ -361,6 +412,7 @@ class SubjectPage(Page):
     """Like SubjectController: enrol, remove, show subjects and change password."""
 
     def buildPage(self):
+        """Build the widgets and layout for this page."""
         self.addTitle("Student Course Menu")
 
         self.welcome = tk.StringVar()
@@ -395,6 +447,7 @@ class SubjectPage(Page):
         ttk.Button(self, text="Log out", command=self.onLogoutPressed).pack(side="bottom", anchor="e")
 
     def onShow(self):
+        """Prepare or refresh the page when it becomes visible."""
         self.newPassword.set("")
         self.confirmPassword.set("")
         self.status.set("")
@@ -402,6 +455,7 @@ class SubjectPage(Page):
 
     def showSubjectWindow(self, student):
         # always read the student again, so the table shows what is really saved
+        """Refresh the student details and enrolled subject table."""
         student = self.app.repo.getStudent(student.student_id)
         subjects = student.getSubjects()
 
@@ -413,6 +467,7 @@ class SubjectPage(Page):
         self.welcome.set(f"{student.name}  -  enrolled in {len(subjects)} out of {MAX_SUBJECTS} subjects")
 
     def onEnrolPressed(self):
+        """Enrol the current student and refresh the subject display."""
         student = self.app.currentStudent
         subject = self.enrolInNewSubject(student)
         self.showSubjectWindow(student)
@@ -420,6 +475,7 @@ class SubjectPage(Page):
 
     def enrolInNewSubject(self, student):
         # Mathis's sequence: get, generate, add, update
+        """Create and save a subject enrolment for the supplied student."""
         student = self.app.repo.getStudent(student.student_id)
 
         if len(student.getSubjects()) >= MAX_SUBJECTS:
@@ -435,6 +491,7 @@ class SubjectPage(Page):
         return subject
 
     def onRemovePressed(self):
+        """Remove the selected subject and refresh the student display."""
         selected = self.table.selection()
         if not selected:
             raise ValueError("Select a subject in the table first")
@@ -448,6 +505,7 @@ class SubjectPage(Page):
         self.status.set(f"Dropping Subject-{subject_id}")
 
     def onChangePasswordPressed(self):
+        """Validate the password confirmation and save the new password."""
         new_password = self.newPassword.get()
 
         try:
@@ -467,6 +525,7 @@ class SubjectPage(Page):
         self.status.set("Password updated")
 
     def onLogoutPressed(self):
+        """Clear the current student and return to the student page."""
         self.app.currentStudent = None
         self.app.showPage(StudentPage)
 
@@ -475,6 +534,7 @@ class GUIUniApp:
     """The window. Holds the shared objects and moves between the pages."""
 
     def __init__(self, repo, validator, generator):
+        """Initialize the instance and its dependencies."""
         self.repo = repo
         self.validator = validator
         self.generator = generator
@@ -500,27 +560,39 @@ class GUIUniApp:
             self.pages[pageClass] = page
 
     def run(self):
+        """Display the university page and start the GUI event loop."""
         self.showPage(UniversityPage)
         self.root.mainloop()
 
     def showPage(self, pageClass):
+        """Refresh and raise the requested page."""
         page = self.pages[pageClass]
         page.onShow()
         page.tkraise()
         self.currentPage = pageClass
 
     def showLoginWindow(self):
+        """Display the login page."""
         self.showPage(LoginPage)
 
     def openSubjectWindow(self, student):
+        """Set the authenticated student and display the subject page."""
         self.currentStudent = student
         self.showPage(SubjectPage)
 
+    # def showException(self, message):
+    #     """Display an error message in a separate window."""
+    #     self.showMessage("Error", message)
+
     def showException(self, message):
         self.showMessage("Error", message)
+        page = self.pages.get(self.currentPage)
+        if page is not None:
+            self.root.after(100, page.restoreFocus)   
 
     def showMessage(self, title, message):
         # a small separate window with an OK button
+        """Open a centered message window with an acknowledgement button."""
         window = tk.Toplevel(self.root)
         window.title(title)
         window.transient(self.root)
@@ -535,14 +607,17 @@ class GUIUniApp:
         window.geometry(f"+{x}+{y}")
 
     def askYesNo(self, title, message):
+        """Ask for confirmation and return the user response."""
         return messagebox.askyesno(title, message, parent=self.root)
 
     def exitApp(self):
+        """Destroy the application window and end the GUI session."""
         self.root.destroy()
 
 
 def guiMain():
     # the GUI's own entry point, the same setup chain as main.py
+    """Initialize shared services and run the graphical application."""
     try:
         database = Database(DATA_PATH)
         repo = StudentRepository.createStudentRepository(database)

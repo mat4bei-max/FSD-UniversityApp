@@ -31,6 +31,7 @@ from university_app.src.gui.gui_app import (
 class GuiTests(unittest.TestCase):
 
     def setUp(self):
+        """Create fresh dependencies and test data for each test."""
         self.temp = TemporaryDirectory(prefix="uniapp-gui-")
         self.addCleanup(self.temp.cleanup)
         self.path = Path(self.temp.name) / "students.data"
@@ -52,9 +53,11 @@ class GuiTests(unittest.TestCase):
     # ---------- helpers ----------
 
     def reload(self):
+        """Load a new repository from the temporary database file."""
         return StudentRepository.createStudentRepository(Database(self.path))
 
     def addJane(self, marks=()):
+        """Save a sample student with subjects for the supplied marks."""
         subjects = [Subject(f"{index:03d}", mark, Subject.calculateGrade(mark))
                     for index, mark in enumerate(marks, 1)]
         self.repo.addStudent(Student(
@@ -62,6 +65,7 @@ class GuiTests(unittest.TestCase):
         ))
 
     def pressLogin(self, email, password):
+        """Populate the login fields and invoke the login action."""
         self.app.showLoginWindow()
         page = self.app.pages[LoginPage]
         page.email.set(email)
@@ -69,17 +73,21 @@ class GuiTests(unittest.TestCase):
         page.safe(page.onLoginPressed)()
 
     def loginAsJane(self):
+        """Log in as the sample student and return the subject page."""
         self.pressLogin("jane.smith@university.com", "Hello123")
         return self.app.pages[SubjectPage]
 
     def tableIds(self, page):
+        """Return the subject IDs displayed in the table."""
         return [page.table.set(item, "id") for item in page.table.get_children()]
 
     def adminText(self):
+        """Return the text displayed in the admin output area."""
         return self.app.pages[AdminPage].output.get("1.0", "end")
 
     def readGroups(self, text):
         # turns the admin text into {"Z": [entries], "P": [entries], ...}
+        """Parse displayed admin groups into a dictionary of entries."""
         groups = {}
         current = None
         for line in text.splitlines()[1:]:
@@ -93,11 +101,13 @@ class GuiTests(unittest.TestCase):
     # ---------- pages ----------
 
     def testThereIsOnePageForEachController(self):
+        """Verify there is one page for each controller."""
         self.assertEqual(set(self.app.pages), {
             UniversityPage, AdminPage, StudentPage, LoginPage, RegisterPage, SubjectPage
         })
 
     def testShowPageRemembersTheCurrentPage(self):
+        """Verify show page remembers the current page."""
         for pageClass in (AdminPage, StudentPage, RegisterPage, UniversityPage):
             self.app.showPage(pageClass)
             self.assertEqual(self.app.currentPage, pageClass)
@@ -108,6 +118,7 @@ class GuiTests(unittest.TestCase):
     # ---------- login page ----------
 
     def testIsAnyFieldEmpty(self):
+        """Verify is any field empty."""
         page = self.app.pages[LoginPage]
         self.assertTrue(page.isAnyFieldEmpty("", "Hello123"))
         self.assertTrue(page.isAnyFieldEmpty("jane.smith@university.com", ""))
@@ -116,12 +127,14 @@ class GuiTests(unittest.TestCase):
         self.assertFalse(page.isAnyFieldEmpty("jane.smith@university.com", "Hello123"))
 
     def testIsEmailFormatValid(self):
+        """Verify is email format valid."""
         page = self.app.pages[LoginPage]
         self.assertTrue(page.isEmailFormatValid("jane.smith@university.com"))
         for bad in ["invalid", "jane@university.com", "jane.smith@gmail.com", ""]:
             self.assertFalse(page.isEmailFormatValid(bad), bad)
 
     def testFindStudentReturnsTheMatchOrNone(self):
+        """Verify find student returns the match or none."""
         self.addJane()
         page = self.app.pages[LoginPage]
         self.assertEqual(page.findStudent("jane.smith@university.com", "Hello123").student_id, "000007")
@@ -129,21 +142,25 @@ class GuiTests(unittest.TestCase):
         self.assertIsNone(page.findStudent("john.smith@university.com", "Hello123"))
 
     def testLoginWithEmptyFieldsShowsError(self):
+        """Verify login with empty fields shows error."""
         self.pressLogin("", "")
         self.assertEqual(self.messages, [("Error", "Email and password cannot be empty")])
         self.assertEqual(self.app.currentPage, LoginPage)
 
     def testEmptyCheckComesBeforeEmailFormatCheck(self):
+        """Verify empty check comes before email format check."""
         self.pressLogin("invalid", "")
         self.assertEqual(self.messages, [("Error", "Email and password cannot be empty")])
 
     def testLoginWithBadEmailFormatShowsError(self):
+        """Verify login with bad email format shows error."""
         self.addJane()
         self.pressLogin("invalid", "Hello123")
         self.assertEqual(self.messages, [("Error", gui_app.EMAIL_HELP)])
         self.assertEqual(self.app.currentPage, LoginPage)
 
     def testLoginWithWrongPasswordOrUnknownEmailShowsError(self):
+        """Verify login with wrong password or unknown email shows error."""
         self.addJane()
         self.pressLogin("jane.smith@university.com", "Wrong123")
         self.pressLogin("john.smith@university.com", "Hello123")
@@ -151,6 +168,7 @@ class GuiTests(unittest.TestCase):
         self.assertEqual(self.app.currentPage, LoginPage)
 
     def testGoodLoginOpensTheSubjectPage(self):
+        """Verify good login opens the subject page."""
         self.addJane([55, 85])
         self.loginAsJane()
 
@@ -160,6 +178,7 @@ class GuiTests(unittest.TestCase):
         self.assertIn("Jane Smith", self.app.pages[SubjectPage].welcome.get())
 
     def testLoginFieldsAreClearedWhenThePageIsShownAgain(self):
+        """Verify login fields are cleared when the page is shown again."""
         self.pressLogin("jane.smith@university.com", "Hello123")
         self.app.showLoginWindow()
         page = self.app.pages[LoginPage]
@@ -168,6 +187,7 @@ class GuiTests(unittest.TestCase):
     # ---------- register page ----------
 
     def register(self, email, password, name):
+        """Populate the registration form and invoke the register action."""
         self.app.showPage(RegisterPage)
         page = self.app.pages[RegisterPage]
         page.email.set(email)
@@ -176,6 +196,7 @@ class GuiTests(unittest.TestCase):
         page.safe(page.onRegisterPressed)()
 
     def testRegisterSavesTheStudentAndGoesBack(self):
+        """Verify register saves the student and goes back."""
         self.register("jane.smith@university.com", "Hello123", "Jane Smith")
 
         saved = self.reload().getStudents()
@@ -186,11 +207,13 @@ class GuiTests(unittest.TestCase):
         self.assertEqual(self.app.currentPage, StudentPage)
 
     def testRegisteredStudentCanLogIn(self):
+        """Verify registered student can log in."""
         self.register("jane.smith@university.com", "Hello123", "Jane Smith")
         self.pressLogin("jane.smith@university.com", "Hello123")
         self.assertEqual(self.app.currentPage, SubjectPage)
 
     def testRegisterRejectsDuplicateEmail(self):
+        """Verify register rejects duplicate email."""
         self.addJane()
         self.register("jane.smith@university.com", "Hello123", "Someone Else")
 
@@ -198,6 +221,7 @@ class GuiTests(unittest.TestCase):
         self.assertEqual(len(self.reload().getStudents()), 1)
 
     def testRegisterRejectsBadInputAndSavesNothing(self):
+        """Verify register rejects bad input and saves nothing."""
         self.register("invalid", "Hello123", "Jane Smith")
         self.register("jane.smith@university.com", "hello123", "Jane Smith")
         self.register("jane.smith@university.com", "Hello123", "   ")
@@ -214,6 +238,7 @@ class GuiTests(unittest.TestCase):
     # ---------- subject page ----------
 
     def testSubjectTableListsIdMarkAndGrade(self):
+        """Verify subject table lists id mark and grade."""
         self.addJane([55, 85])
         page = self.loginAsJane()
 
@@ -225,6 +250,7 @@ class GuiTests(unittest.TestCase):
         self.assertIn("2 out of 4", page.welcome.get())
 
     def testFourSubjectLimitAndFifthIsRefused(self):
+        """Verify four subject limit and fifth is refused."""
         self.addJane()
         page = self.loginAsJane()
 
@@ -241,6 +267,7 @@ class GuiTests(unittest.TestCase):
         self.assertIn("4 out of 4", page.welcome.get())
 
     def testFailedSaveShowsErrorAndKeepsTheFile(self):
+        """Verify failed save shows error and keeps the file."""
         self.addJane()
         page = self.loginAsJane()
         before = self.path.read_bytes()
@@ -253,6 +280,7 @@ class GuiTests(unittest.TestCase):
         self.assertEqual(page.table.get_children(), ())
 
     def testRemoveSelectedSubjectFreesAPlace(self):
+        """Verify remove selected subject frees aplace."""
         self.addJane([55, 65, 75, 85])
         page = self.loginAsJane()
 
@@ -268,6 +296,7 @@ class GuiTests(unittest.TestCase):
         self.assertEqual(self.messages, [])
 
     def testRemoveWithoutSelectingShowsError(self):
+        """Verify remove without selecting shows error."""
         self.addJane([55])
         page = self.loginAsJane()
 
@@ -277,6 +306,7 @@ class GuiTests(unittest.TestCase):
         self.assertEqual(len(self.reload().getStudent("000007").getSubjects()), 1)
 
     def testChangePasswordIsSaved(self):
+        """Verify change password is saved."""
         self.addJane()
         page = self.loginAsJane()
         page.newPassword.set("World456")
@@ -291,6 +321,7 @@ class GuiTests(unittest.TestCase):
         self.assertEqual(self.messages, [])
 
     def testChangePasswordMismatchOrBadFormatKeepsTheOldPassword(self):
+        """Verify change password mismatch or bad format keeps the old password."""
         self.addJane()
         page = self.loginAsJane()
 
@@ -307,6 +338,7 @@ class GuiTests(unittest.TestCase):
         self.assertEqual(self.reload().getStudent("000007").password, "Hello123")
 
     def testLogoutGoesBackToTheStudentPage(self):
+        """Verify logout goes back to the student page."""
         self.addJane()
         page = self.loginAsJane()
 
@@ -318,6 +350,7 @@ class GuiTests(unittest.TestCase):
     # ---------- admin page ----------
 
     def testShowStudents(self):
+        """Verify show students."""
         page = self.app.pages[AdminPage]
         page.safe(page.showStudents)()
         self.assertIn("< Nothing to Display >", self.adminText())
@@ -327,6 +360,7 @@ class GuiTests(unittest.TestCase):
         self.assertIn("Jane Smith :: 000007 --> Email: jane.smith@university.com", self.adminText())
 
     def testGroupByGradeUsesTheUnroundedAverage(self):
+        """Verify group by grade uses the unrounded average."""
         cases = [
             ([49, 50, 50, 50], "Z"), ([50, 50, 50, 50], "P"),
             ([64, 65, 65, 65], "P"), ([65, 65, 65, 65], "C"),
@@ -348,6 +382,7 @@ class GuiTests(unittest.TestCase):
                             f"Boundary {number} should be in {grade}")
 
     def testPassFailPartitionUsesTheUnroundedAverage(self):
+        """Verify pass fail partition uses the unrounded average."""
         cases = [([49, 50, 50, 50], "FAIL"), ([50, 50, 50, 50], "PASS"), ([85, 85, 85, 85], "PASS")]
         for number, (marks, status) in enumerate(cases, 1):
             subjects = [Subject(f"{number * 10 + i:03d}", mark, Subject.calculateGrade(mark))
@@ -364,6 +399,7 @@ class GuiTests(unittest.TestCase):
         self.assertNotIn("UNCLASSIFIED", groups)
 
     def testStudentWithNoSubjectsIsUngradedAndUnclassified(self):
+        """Verify student with no subjects is ungraded and unclassified."""
         self.addJane()
         page = self.app.pages[AdminPage]
 
@@ -373,6 +409,7 @@ class GuiTests(unittest.TestCase):
         self.assertIn("UNCLASSIFIED (1)", self.adminText())
 
     def testGroupAndPartitionOnAnEmptyDatabase(self):
+        """Verify group and partition on an empty database."""
         page = self.app.pages[AdminPage]
 
         page.safe(page.groupStudents)()
@@ -383,6 +420,7 @@ class GuiTests(unittest.TestCase):
         self.assertIn("PASS (0)", self.adminText())
 
     def testRemoveStudentChecksTheIdAndSavesTheRemoval(self):
+        """Verify remove student checks the id and saves the removal."""
         self.addJane()
         page = self.app.pages[AdminPage]
 
@@ -403,6 +441,7 @@ class GuiTests(unittest.TestCase):
         self.assertEqual(self.reload().getStudents(), [])
 
     def testClearDatabaseNeedsAYes(self):
+        """Verify clear database needs ayes."""
         self.addJane()
         page = self.app.pages[AdminPage]
         before = self.path.read_bytes()
@@ -419,6 +458,7 @@ class GuiTests(unittest.TestCase):
     # ---------- error window ----------
 
     def testErrorIsShownInASeparateSmallWindow(self):
+        """Verify error is shown in aseparate small window."""
         self.realShowMessage("Error", "Something went wrong")
 
         windows = [w for w in self.app.root.winfo_children() if isinstance(w, tk.Toplevel)]
