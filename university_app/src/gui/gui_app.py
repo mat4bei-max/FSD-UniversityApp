@@ -10,17 +10,12 @@
 #
 # The CLI controllers use input() and print(), so the GUI does not call them.
 # It uses the repository, validator and generator directly (see Shiva's notes).
-#
-# ASSUMPTION: this file sits in the project folder next to main.py and is
-# started with:  python3 gui_app.py
-# REPLACE LATER if the file is moved (the imports below would change).
+
 
 import tkinter as tk
 from pathlib import Path
 from tkinter import messagebox, ttk
 
-# ASSUMPTION: the GUI uses the same data file as the CLI, taken from main.py
-# so both always match. REPLACE LATER if the team keeps the path somewhere else.
 from university_app.src.database.database import Database
 from university_app.src.system.student import Student
 from university_app.src.system.student_repository import StudentRepository
@@ -28,8 +23,7 @@ from university_app.src.system.subject import Subject
 from university_app.src.utils.id_generator import IDGenerator
 from university_app.src.utils.validator import Validator
 
-# ASSUMPTION: the limit is 4 subjects (from the brief). Student.addSubject
-# also checks it, this one only gives a nicer message before anything is saved.
+
 MAX_SUBJECTS = 4
 
 EMAIL_HELP = "Email must look like firstname.lastname@university.com"
@@ -163,8 +157,7 @@ class AdminPage(Page):
         self.output.insert("end", "\n".join(lines))
         self.output.configure(state="disabled")
 
-    # Same rule as AdminController.average_mark (average of the subjects the student
-    # has now). REPLACE LATER if the team moves this rule into Student.
+
     def averageMark(self, student):
         """Return the average subject mark, or None when no subjects exist."""
         subjects = student.getSubjects()
@@ -331,7 +324,7 @@ class LoginPage(Page):
         return True
 
     def findStudent(self, email, password):
-        # Shiva's Validator.login loops over the repository students and raises
+        # login loops over the repository students and raises
         # ValueError if nothing matches. This returns the student or None.
         """Return the student matching the credentials, or None."""
         try:
@@ -622,8 +615,6 @@ def guiMain():
         database = Database(DATA_PATH)
         repo = StudentRepository.createStudentRepository(database)
     except (ValueError, KeyError, OSError) as error:
-        # ASSUMPTION: same as main.py, load() does not handle a damaged file.
-        # REPLACE LATER if Shiva handles it himself.
         print(f"Could not load the students file: {error}")
         return
 
