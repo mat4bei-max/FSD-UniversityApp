@@ -46,6 +46,7 @@ class Page(ttk.Frame):
         """Initialize the instance and its dependencies."""
         super().__init__(parent, padding=20)
         self.app = app
+        self.lastEntry = None
         self.buildPage()
 
     def buildPage(self):
@@ -57,16 +58,38 @@ class Page(ttk.Frame):
         """Prepare or refresh the page when it becomes visible."""
         pass
 
+    def trackEntry(self, entry):
+        """Remember the entry that last had the cursor (first entry is the default)."""
+        if self.lastEntry is None:
+            self.lastEntry = entry          # default, so it works even if nothing was clicked yet
+        entry.bind("<FocusIn>", lambda event: setattr(self, "lastEntry", entry), add="+")
+        return entry
+
+    def restoreFocus(self):
+        """Put the cursor back in the entry the user was using."""
+        if self.lastEntry is None:
+            return
+        self.winfo_toplevel().lift()
+        self.winfo_toplevel().focus_force()   # re-activate the main window first
+        self.lastEntry.focus_force()
+        self.lastEntry.icursor("end")
+
     def addTitle(self, text):
         """Add a heading label to the page."""
         ttk.Label(self, text=text, font=("Helvetica", 20, "bold")).pack(pady=(0, 15))
 
+    # def addField(self, form, row, label, variable, hidden=False):
+    #     """Add a labeled input field and return its entry widget."""
+    #     ttk.Label(form, text=label).grid(row=row, column=0, sticky="e", padx=5, pady=5)
+    #     entry = ttk.Entry(form, textvariable=variable, width=32, show="*" if hidden else "")
+    #     entry.grid(row=row, column=1, pady=5)
+    #     return entry
+
     def addField(self, form, row, label, variable, hidden=False):
-        """Add a labeled input field and return its entry widget."""
         ttk.Label(form, text=label).grid(row=row, column=0, sticky="e", padx=5, pady=5)
         entry = ttk.Entry(form, textvariable=variable, width=32, show="*" if hidden else "")
         entry.grid(row=row, column=1, pady=5)
-        return entry
+        return self.trackEntry(entry)
 
     def safe(self, action):
         # same idea as the CLI controllers: ValueError / OSError become an error message
@@ -557,9 +580,15 @@ class GUIUniApp:
         self.currentStudent = student
         self.showPage(SubjectPage)
 
+    # def showException(self, message):
+    #     """Display an error message in a separate window."""
+    #     self.showMessage("Error", message)
+
     def showException(self, message):
-        """Display an error message in a separate window."""
         self.showMessage("Error", message)
+        page = self.pages.get(self.currentPage)
+        if page is not None:
+            self.root.after(100, page.restoreFocus)   
 
     def showMessage(self, title, message):
         # a small separate window with an OK button
